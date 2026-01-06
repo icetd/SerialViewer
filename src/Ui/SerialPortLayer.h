@@ -26,14 +26,14 @@ private:
 
     Oscilloscope m_scope;
 
-    void messageCallback(uint8_t* data, uint16_t len);
+    void messageCallback(uint8_t *data, uint16_t len);
     void ShowPortControl();
 
     // 波特率设置相关
     std::vector<std::pair<int, std::string>> m_baudrate_list;
-    std::vector<const char*> m_baudrate_display_list;
+    std::vector<const char *> m_baudrate_display_list;
     int m_selected_baudrate;
-    
+
     void InitBaudrateList();
 };
 

@@ -88,7 +88,6 @@ void Oscilloscope::Draw()
     // 现在使用读取缓冲区（不需要锁）
     const DataBuffer &buffer = m_readBuffer;
 
-
     DrawControlPanel(buffer);
     DrawStats(buffer);
     DrawPolit(buffer);
@@ -252,7 +251,7 @@ void Oscilloscope::DrawControlPanel(const DataBuffer &buffer)
 
     ImGui::PushItemWidth(-ImGui::GetWindowWidth() * 0.2f);
     ImGui::AlignTextToFramePadding();
-    
+
     ImGui::SeparatorText(u8"状态设置");
     bool is_paused = m_pausedAtomic.load();
     if (ImGui::Button(is_paused ? u8"继续" : u8"暂停", ImVec2(80, 30))) {
@@ -272,7 +271,6 @@ void Oscilloscope::DrawControlPanel(const DataBuffer &buffer)
     }
     ImGui::SameLine();
     ImGui::Text(u8"通道: %d  总点数: %d", (int)buffer.channelsData.size(), buffer.totalPoints);
-
 
     ImGui::SeparatorText(u8"时间窗口设置");
     // 时间窗口滑块
@@ -336,7 +334,7 @@ void Oscilloscope::DrawControlPanel(const DataBuffer &buffer)
     }
     ImGui::Text(u8"当前最大点数: %d 点", maxPoints);
     ImGui::Spacing();
- 
+
     // 采样率显示
     ImGui::Text(u8"buffer更新率: %.1f Hz", buffer.updateRate);
 
@@ -357,7 +355,6 @@ void Oscilloscope::DrawControlPanel(const DataBuffer &buffer)
         m_readBuffer.autoScale = autoScale;
         std::cout << "自动缩放: " << (autoScale ? "开启" : "关闭") << std::endl;
     }
-
 
     ImGui::Spacing();
     ImGui::SeparatorText(u8"通道控制");
@@ -536,7 +533,7 @@ void Oscilloscope::DrawPolit(const DataBuffer &buffer)
         // 静态变量存储波形平移偏移
         static float waveform_offset = 0.0f;
         static bool is_dragging = false;
-        
+
         // 处理暂停状态下的波形平移
         if (buffer.paused) {
             // 检查鼠标拖拽
@@ -544,37 +541,37 @@ void Oscilloscope::DrawPolit(const DataBuffer &buffer)
                 if (ImGui::IsMouseClicked(0)) {
                     is_dragging = true;
                 }
-                
+
                 if (ImGui::IsMouseReleased(0)) {
                     is_dragging = false;
                 }
-                
+
                 if (is_dragging && ImGui::IsMouseDragging(0)) {
                     // 获取鼠标拖拽距离
                     ImVec2 drag_delta = ImGui::GetMouseDragDelta(0);
-                    
+
                     // 计算波形平移量
                     // 每个像素对应数据点的移动量
                     float drag_sensitivity = 0.5f; // 调整这个值改变灵敏度
                     waveform_offset += drag_delta.x * drag_sensitivity;
-                    
+
                     // 限制平移范围：不能超出数据范围
                     if (!buffer.channelsData.empty() && !buffer.channelsData[0].empty()) {
                         int max_data_points = static_cast<int>(buffer.channelsData[0].size());
                         int max_offset = std::max(0, max_data_points - 1);
                         waveform_offset = clamp_value(waveform_offset, -max_offset * 0.5f, max_offset * 0.5f);
                     }
-                    
+
                     // 重置拖拽状态
                     ImGui::ResetMouseDragDelta(0);
                 }
             }
-            
+
             // 显示平移提示
             if (is_dragging) {
                 ImGui::SetTooltip(u8"平移: %.1f 点", waveform_offset);
             }
-            
+
             // 重置按钮
             if (ImGui::IsKeyPressed(ImGuiKey_R)) {
                 waveform_offset = 0.0f;
@@ -612,36 +609,36 @@ void Oscilloscope::DrawPolit(const DataBuffer &buffer)
         for (int ch = 0; ch < static_cast<int>(buffer.channelsData.size()); ++ch) {
             if (!buffer.channelsInfo[ch].visible || buffer.channelsData[ch].empty()) continue;
 
-            const auto& data = buffer.channelsData[ch];
-            
+            const auto &data = buffer.channelsData[ch];
+
             // 创建时间数据，考虑波形平移
             std::vector<float> plot_data;
             std::vector<float> time_data;
-            
+
             float time_step = 1.0f / 100.0f; // 假设100Hz采样率
-            
+
             // 计算可见范围的数据点
             int start_idx = 0;
             int end_idx = static_cast<int>(data.size());
-            
+
             // 如果平移了波形，调整显示的数据范围
             if (waveform_offset != 0.0f && buffer.paused) {
                 // 计算基于平移的偏移索引
                 int offset_idx = static_cast<int>(waveform_offset);
-                
+
                 // 确保索引在有效范围内
                 start_idx = std::max(0, offset_idx);
-                end_idx = std::min(static_cast<int>(data.size()), 
-                                  static_cast<int>(data.size()) + offset_idx);
-                
+                end_idx = std::min(static_cast<int>(data.size()),
+                                   static_cast<int>(data.size()) + offset_idx);
+
                 // 如果偏移是负数（向左移动），需要调整开始和结束位置
                 if (offset_idx < 0) {
                     start_idx = 0;
-                    end_idx = std::min(static_cast<int>(data.size()), 
-                                      static_cast<int>(data.size()) + offset_idx);
+                    end_idx = std::min(static_cast<int>(data.size()),
+                                       static_cast<int>(data.size()) + offset_idx);
                 }
             }
-            
+
             // 准备可见数据
             for (int i = start_idx; i < end_idx; ++i) {
                 if (i >= 0 && i < static_cast<int>(data.size())) {
@@ -650,7 +647,7 @@ void Oscilloscope::DrawPolit(const DataBuffer &buffer)
                     time_data.push_back(static_cast<float>(i - start_idx) * time_step);
                 }
             }
-            
+
             if (plot_data.empty()) continue;
 
             // 设置线条样式
@@ -662,12 +659,12 @@ void Oscilloscope::DrawPolit(const DataBuffer &buffer)
                              plot_data.data(),
                              static_cast<int>(plot_data.size()));
         }
-        
+
         // 在图表上显示控制提示
         if (buffer.paused) {
-            ImPlot::Annotation(buffer.timeWindow * 0.9f, 0, 
-                              ImVec4(1, 1, 1, 0.5f), ImVec2(0, 0), true,
-                              u8"暂停模式 - 拖拽平移波形 | R键重置");
+            ImPlot::Annotation(buffer.timeWindow * 0.9f, 0,
+                               ImVec4(1, 1, 1, 0.5f), ImVec2(0, 0), true,
+                               u8"暂停模式 - 拖拽平移波形 | R键重置");
         }
 
         ImPlot::EndPlot();
