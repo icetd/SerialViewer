@@ -80,7 +80,7 @@ void SerialPort::run()
     std::string result;
 
     while (!this->isStoped()) {
-        result = m_serial->readline();
+        result = m_serial->readline(65536Ui64, ";");
         if (result.length()) {
             try {
                 onSerialCallback((uint8_t*)result.c_str(), result.length());
